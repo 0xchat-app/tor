@@ -21,15 +21,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  path_provider: ^2.1.4
-  ffi: ^2.0.1
-  plugin_platform_interface: ^2.0.2
+  path_provider: ^2.1.5
+  ffi: ^2.1.4
+  plugin_platform_interface: ^2.1.8
 
 dev_dependencies:
-  ffigen: ^11.0.0
+  ffigen: ^19.1.0
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
+  flutter_lints: ^6.0.0
 
 ffigen:
   output: 'lib/generated_bindings.dart'
