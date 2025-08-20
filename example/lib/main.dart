@@ -149,7 +149,7 @@ class _MyAppState extends State<Home> {
                                 "${DateTime.now().difference(time).inSeconds} "
                                 "seconds. Proxy running on port ${Tor.instance.port}");
 
-                            if (mounted) {
+                            if (context.mounted) {
                               Navigator.of(context).pop();
                             }
                           },
