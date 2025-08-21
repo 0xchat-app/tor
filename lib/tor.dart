@@ -14,7 +14,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:tor/generated_bindings.dart' as rust;
 
-DynamicLibrary load(name) {
+DynamicLibrary load(String name) {
   if (Platform.isAndroid || Platform.isLinux) {
     return DynamicLibrary.open('lib$name.so');
   } else if (Platform.isIOS || Platform.isMacOS) {
@@ -98,7 +98,7 @@ class Tor {
   /// Returns a Future that completes when the Tor service has started.
   ///
   /// Throws an exception if the Tor service fails to start.
-  static Future<Tor> init({enabled = true}) async {
+  static Future<Tor> init({bool enabled = true}) async {
     var singleton = Tor._instance;
     singleton._enabled = enabled;
     return singleton;
@@ -227,13 +227,13 @@ class Tor {
   }
 
   /// Stops the proxy
-  stop() async {
+  Future<void> stop() async {
     final lib = rust.NativeLibrary(_lib);
     lib.tor_proxy_stop(_proxyPtr);
     _proxyPtr = nullptr;
   }
 
-  setClientDormant(bool dormant) async {
+  Future<void> setClientDormant(bool dormant) async {
     if (_clientPtr == nullptr || !started || !bootstrapped) {
       throw ClientNotActive();
     }
@@ -261,7 +261,7 @@ class Tor {
             }));
   }
 
-  static throwRustException(rust.NativeLibrary lib) {
+  static void throwRustException(rust.NativeLibrary lib) {
     String rustError = lib.tor_last_error_message().cast<Utf8>().toDartString();
 
     throw _getRustException(rustError);

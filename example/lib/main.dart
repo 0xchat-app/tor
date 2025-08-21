@@ -41,14 +41,22 @@ class _MyAppState extends State<Home> {
   // Flag to track if tor has started.
   bool torStarted = false;
 
+  // Flag to track if tor has started.
+  bool _loading = false;
+
+  // Flag to track if tor has started.
+  String requestResponse = "";
+
   // Set the default text for the host input field.
   final hostController = TextEditingController(text: 'https://icanhazip.com/');
+
   // https://check.torproject.org is another good option.
 
   // Set the default text for the onion input field.
   final onionController = TextEditingController(
       text:
           'https://cflarexljc3rw355ysrkrzwapozws6nre6xsy3n4yrj7taye3uiby3ad.onion');
+
   // See https://blog.cloudflare.com/cloudflare-onion-service/ for more options:
   // cflarexljc3rw355ysrkrzwapozws6nre6xsy3n4yrj7taye3uiby3ad.onion
   // cflarenuttlfuyn7imozr4atzvfbiw3ezgbdjdldmdx7srterayaozid.onion
@@ -64,6 +72,7 @@ class _MyAppState extends State<Home> {
   final bitcoinOnionController = TextEditingController(
       text:
           'qly7g5n5t3f3h23xvbp44vs6vpmayurno4basuu5rcvrupli7y2jmgid.onion:50001');
+
   // For more options, see https://bitnodes.io/nodes/addresses/?q=onion and
   // https://sethforprivacy.com/about/
 
@@ -98,6 +107,13 @@ class _MyAppState extends State<Home> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tor example'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(0),
+          child: Opacity(
+            opacity: _loading ? 1.0 : 0.0,
+            child: const LinearProgressIndicator(),
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         child: Container(
@@ -133,7 +149,7 @@ class _MyAppState extends State<Home> {
                                 "${DateTime.now().difference(time).inSeconds} "
                                 "seconds. Proxy running on port ${Tor.instance.port}");
 
-                            if (mounted) {
+                            if (context.mounted) {
                               Navigator.of(context).pop();
                             }
                           },
@@ -168,37 +184,45 @@ class _MyAppState extends State<Home> {
                   TextButton(
                     onPressed: torStarted
                         ? () async {
-                            // `socks5_proxy` package example, use another socks5
-                            // connection of your choice.
+                            try {
+                              _setRequestResponse("Loading...", true);
+                              // `socks5_proxy` package example, use another socks5
+                              // connection of your choice.
 
-                            // Create HttpClient object
-                            final client = HttpClient();
+                              // Create HttpClient object
+                              final client = HttpClient();
 
-                            // Assign connection factory.
-                            SocksTCPClient.assignToHttpClient(client, [
-                              ProxySettings(InternetAddress.loopbackIPv4,
-                                  Tor.instance.port,
-                                  password:
-                                      null), // TODO Need to get from tor config file.
-                            ]);
+                              // Assign connection factory.
+                              SocksTCPClient.assignToHttpClient(client, [
+                                ProxySettings(InternetAddress.loopbackIPv4,
+                                    Tor.instance.port,
+                                    password:
+                                        null), // TODO Need to get from tor config file.
+                              ]);
 
-                            // GET request.
-                            final url = Uri.parse(hostController.text);
-                            final request = await client.getUrl(url);
-                            final response = await request.close();
+                              // GET request.
+                              final url = Uri.parse(hostController.text);
+                              final request = await client.getUrl(url);
+                              final response = await request.close();
 
-                            // Print response.
-                            var responseString =
-                                await utf8.decodeStream(response);
-                            print(responseString);
-                            // If host input left to default icanhazip.com, a Tor
-                            // exit node IP should be printed to the console.
-                            //
-                            // https://check.torproject.org is also good for
-                            // doublechecking torability.
+                              // Print response.
+                              var responseString =
+                                  await utf8.decodeStream(response);
+                              print(responseString);
 
-                            // Close client
-                            client.close();
+                              _setRequestResponse(responseString, false);
+
+                              // If host input left to default icanhazip.com, a Tor
+                              // exit node IP should be printed to the console.
+                              //
+                              // https://check.torproject.org is also good for
+                              // doublechecking torability.
+
+                              // Close client
+                              client.close();
+                            } catch (e) {
+                              _setRequestResponse(e.toString(), false);
+                            }
                           }
                         : null,
                     child: const Text("Make proxied request"),
@@ -209,53 +233,63 @@ class _MyAppState extends State<Home> {
               TextButton(
                 onPressed: torStarted
                     ? () async {
-                        // Instantiate a socks socket at localhost and on the port selected by the tor service.
-                        var socksSocket = await SOCKSSocket.create(
-                          proxyHost: InternetAddress.loopbackIPv4.address,
-                          proxyPort: Tor.instance.port,
-                          sslEnabled: true, // For SSL connections.
-                        );
+                        try {
+                          _setRequestResponse("Loading...", true);
+                          // Instantiate a socks socket at localhost and on the port selected by the tor service.
+                          var socksSocket = await SOCKSSocket.create(
+                            proxyHost: InternetAddress.loopbackIPv4.address,
+                            proxyPort: Tor.instance.port,
+                            sslEnabled: true, // For SSL connections.
+                          );
 
-                        // Connect to the socks instantiated above.
-                        await socksSocket.connect();
+                          // Connect to the socks instantiated above.
+                          await socksSocket.connect();
 
-                        // Connect to bitcoin.stackwallet.com on port 50002 via socks socket.
-                        //
-                        // Note that this is an SSL example.
-                        await socksSocket.connectTo(
-                            'bitcoin.stackwallet.com', 50002);
+                          // Connect to bitcoin.stackwallet.com on port 50002 via socks socket.
+                          //
+                          // Note that this is an SSL example.
+                          await socksSocket.connectTo(
+                              'bitcoin.stackwallet.com', 50002);
+                          final stream = socksSocket.responseController.stream
+                              .listen((event) {
+                            print("Response received: ${utf8.decode(event)}");
+                            _setRequestResponse(utf8.decode(event), false);
+                          });
+                          // Send a server features command to the connected socket, see method for more specific usage example..
+                          await socksSocket.sendServerFeaturesCommand();
 
-                        // Send a server features command to the connected socket, see method for more specific usage example..
-                        await socksSocket.sendServerFeaturesCommand();
+                          // You should see a server response printed to the console.
+                          //
+                          // Example response:
+                          // `flutter: secure responseData: {
+                          // 	"id": "0",
+                          // 	"jsonrpc": "2.0",
+                          // 	"result": {
+                          // 		"cashtokens": true,
+                          // 		"dsproof": true,
+                          // 		"genesis_hash": "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+                          // 		"hash_function": "sha256",
+                          // 		"hosts": {
+                          // 			"bitcoin.stackwallet.com": {
+                          // 				"ssl_port": 50002,
+                          // 				"tcp_port": 50001,
+                          // 				"ws_port": 50003,
+                          // 				"wss_port": 50004
+                          // 			}
+                          // 		},
+                          // 		"protocol_max": "1.5",
+                          // 		"protocol_min": "1.4",
+                          // 		"pruning": null,
+                          // 		"server_version": "Fulcrum 1.9.1"
+                          // 	}
+                          // }
 
-                        // You should see a server response printed to the console.
-                        //
-                        // Example response:
-                        // `flutter: secure responseData: {
-                        // 	"id": "0",
-                        // 	"jsonrpc": "2.0",
-                        // 	"result": {
-                        // 		"cashtokens": true,
-                        // 		"dsproof": true,
-                        // 		"genesis_hash": "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
-                        // 		"hash_function": "sha256",
-                        // 		"hosts": {
-                        // 			"bitcoin.stackwallet.com": {
-                        // 				"ssl_port": 50002,
-                        // 				"tcp_port": 50001,
-                        // 				"ws_port": 50003,
-                        // 				"wss_port": 50004
-                        // 			}
-                        // 		},
-                        // 		"protocol_max": "1.5",
-                        // 		"protocol_min": "1.4",
-                        // 		"pruning": null,
-                        // 		"server_version": "Fulcrum 1.9.1"
-                        // 	}
-                        // }
-
-                        // Close the socket.
-                        await socksSocket.close();
+                          // Close the socket.
+                          await socksSocket.close();
+                          stream.cancel();
+                        } catch (e) {
+                          _setRequestResponse(e.toString(), false);
+                        }
                       }
                     : null,
                 child: const Text(
@@ -300,6 +334,11 @@ class _MyAppState extends State<Home> {
                               sslEnabled: !domain
                                   .endsWith(".onion"), // For SSL connections.
                             );
+                            final stream = socksSocket.responseController.stream
+                                .listen((event) {
+                              print("Response received: ${utf8.decode(event)}");
+                              _setRequestResponse(utf8.decode(event), false);
+                            });
 
                             // Connect to the socks instantiated above.
                             await socksSocket.connect();
@@ -340,6 +379,7 @@ class _MyAppState extends State<Home> {
 
                             // Close the socket.
                             await socksSocket.close();
+                            stream.cancel();
                           }
 
                         // A mutex should be added to this example to prevent
@@ -378,76 +418,82 @@ class _MyAppState extends State<Home> {
                               print("Invalid onion address (needs port)");
                               return;
                             }
+                            _setRequestResponse("Loading...", true);
 
-                            final String host =
-                                moneroOnionController.text.split(":").first;
-                            final int port = int.parse(moneroOnionController
-                                .text
-                                .split(":")
-                                .last
-                                .split("/")
-                                .first);
-                            final String path = moneroOnionController.text
-                                .split(":")
-                                .last
-                                .split("/")
-                                .last; // Extract the path
+                            try {
+                              final String host =
+                                  moneroOnionController.text.split(":").first;
+                              final int port = int.parse(moneroOnionController
+                                  .text
+                                  .split(":")
+                                  .last
+                                  .split("/")
+                                  .first);
+                              final String path = moneroOnionController.text
+                                  .split(":")
+                                  .last
+                                  .split("/")
+                                  .last; // Extract the path
 
-                            var socksSocket = await SOCKSSocket.create(
-                              proxyHost: InternetAddress.loopbackIPv4.address,
-                              proxyPort: Tor.instance.port,
-                              sslEnabled: false,
-                            );
+                              var socksSocket = await SOCKSSocket.create(
+                                proxyHost: InternetAddress.loopbackIPv4.address,
+                                proxyPort: Tor.instance.port,
+                                sslEnabled: false,
+                              );
 
-                            await socksSocket.connect();
-                            await socksSocket.connectTo(host, port);
+                              await socksSocket.connect();
+                              await socksSocket.connectTo(host, port);
 
-                            final body = jsonEncode({
-                              "jsonrpc": "2.0",
-                              "id": "0",
-                              "method": "get_info",
-                            });
+                              final body = jsonEncode({
+                                "jsonrpc": "2.0",
+                                "id": "0",
+                                "method": "get_info",
+                              });
 
-                            final request = 'POST /$path HTTP/1.1\r\n'
-                                'Host: $host\r\n'
-                                'Content-Type: application/json\r\n'
-                                'Content-Length: ${body.length}\r\n'
-                                '\r\n'
-                                '$body';
+                              final request = 'POST /$path HTTP/1.1\r\n'
+                                  'Host: $host\r\n'
+                                  'Content-Type: application/json\r\n'
+                                  'Content-Length: ${body.length}\r\n'
+                                  '\r\n'
+                                  '$body';
 
-                            socksSocket.write(request);
-                            print("Request sent: $request");
+                              socksSocket.write(request);
+                              print("Request sent: $request");
 
-                            await for (var response
-                                in socksSocket.inputStream) {
-                              final result = utf8.decode(response);
-                              print("Response received: $result");
-                              break;
+                              await for (var response
+                                  in socksSocket.inputStream) {
+                                final result = utf8.decode(response);
+                                print("Response received: $result");
+                                _setRequestResponse(result, false);
+                                break;
+                              }
+
+                              // You should see a server response printed to the console.
+                              //
+                              // Example response:
+                              // Host: ucdouiihzwvb5edg3ezeufcs4yp26gq4x64n6b4kuffb7s7jxynnk7qd.onion
+                              // Content-Type: application/json
+                              // Content-Length: 46
+                              //
+                              // {"jsonrpc":"2.0","id":"0","method":"get_info"}
+                              // flutter: Response received: HTTP/1.1 200 Ok
+                              // Server: Epee-based
+                              // Content-Length: 1434
+                              // Content-Type: application/json
+                              // Last-Modified: Thu, 03 Oct 2024 23:08:19 GMT
+                              // Accept-Ranges: bytes
+                              //
+                              // {
+                              // "id": "0",
+                              // "jsonrpc": "2.0",
+                              // "result": {
+                              // "adjusted_time": 1727996959,
+                              // ...
+
+                              await socksSocket.close();
+                            } catch (e) {
+                              _setRequestResponse(e.toString(), false);
                             }
-
-                            // You should see a server response printed to the console.
-                            //
-                            // Example response:
-                            // Host: ucdouiihzwvb5edg3ezeufcs4yp26gq4x64n6b4kuffb7s7jxynnk7qd.onion
-                            // Content-Type: application/json
-                            // Content-Length: 46
-                            //
-                            // {"jsonrpc":"2.0","id":"0","method":"get_info"}
-                            // flutter: Response received: HTTP/1.1 200 Ok
-                            // Server: Epee-based
-                            // Content-Length: 1434
-                            // Content-Type: application/json
-                            // Last-Modified: Thu, 03 Oct 2024 23:08:19 GMT
-                            // Accept-Ranges: bytes
-                            //
-                            // {
-                            // "id": "0",
-                            // "jsonrpc": "2.0",
-                            // "result": {
-                            // "adjusted_time": 1727996959,
-                            // ...
-
-                            await socksSocket.close();
                           }
 
                         // A mutex should be added to this example to prevent
@@ -459,10 +505,19 @@ class _MyAppState extends State<Home> {
                   ),
                 ],
               ),
+              spacerSmall,
+              Text(requestResponse)
             ],
           ),
         ),
       ),
     );
+  }
+
+  _setRequestResponse(String response, bool loading) {
+    setState(() {
+      _loading = loading;
+      requestResponse = response;
+    });
   }
 }

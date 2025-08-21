@@ -98,12 +98,12 @@ class SOCKSSocket {
   /// Private constructor.
   SOCKSSocket._(this.proxyHost, this.proxyPort, this.sslEnabled);
 
-  /// Provides a stream of data as List<int>.
+  /// Provides a stream of data as `List<int>`.
   Stream<List<int>> get inputStream => sslEnabled
       ? _secureResponseController.stream
       : _responseController.stream;
 
-  /// Provides a StreamSink compatible with List<int> for sending data.
+  /// Provides a StreamSink compatible with `List<int>` for sending data.
   StreamSink<List<int>> get outputStream {
     // Create a simple StreamSink wrapper for _socksSocket and
     // _secureSocksSocket that accepts List<int> and forwards it to write method.
