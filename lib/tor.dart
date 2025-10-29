@@ -4,27 +4,16 @@
 // SPDX-License-Identifier: MIT
 
 import 'dart:async';
-import 'dart:ffi';
 import 'dart:io';
-import 'dart:isolate';
 import 'dart:math';
 
-import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:tor/generated_bindings.dart' as rust;
-
-DynamicLibrary load(String name) {
-  if (Platform.isAndroid || Platform.isLinux) {
-    return DynamicLibrary.open('lib$name.so');
-  } else if (Platform.isIOS || Platform.isMacOS) {
-    return DynamicLibrary.open('$name.framework/$name');
-  } else if (Platform.isWindows) {
-    return DynamicLibrary.open('$name.dll');
-  } else {
-    throw NotSupportedPlatform('${Platform.operatingSystem} is not supported!');
-  }
-}
+import 'package:tor/dart_api/bridge_generated.dart/bridge.dart' as frb;
+import 'package:tor/dart_api/bridge_generated.dart/frb_generated.dart';
+import 'package:tor/dart_api/tor_api.dart';
+import 'package:tor/system_proxy_monitor.dart';
+import 'package:tor/proxy_support.dart' as proxy_support;
 
 class CouldntBootstrapDirectory implements Exception {
   String? rustError;
@@ -40,10 +29,7 @@ class ClientNotActive implements Exception {}
 
 class Tor {
   static const String libName = "tor";
-  static late DynamicLibrary _lib;
-
-  Pointer<Void> _clientPtr = nullptr;
-  Pointer<Void> _proxyPtr = nullptr;
+  static bool _frbInitialized = false;
 
   /// Flag to indicate that Tor client and proxy have started. Traffic is routed through the proxy only if it is also [enabled].
   bool get started => _started;
@@ -102,6 +88,11 @@ class Tor {
   ///
   /// Throws an exception if the Tor service fails to start.
   static Future<Tor> init({bool enabled = true}) async {
+    if (!_frbInitialized) {
+      await RustLib.init();
+      _frbInitialized = true;
+      debugPrint('✓ FRB initialized');
+    }
     var singleton = Tor._instance;
     singleton._enabled = enabled;
     return singleton;
@@ -109,11 +100,7 @@ class Tor {
 
   /// Private constructor for the Tor class.
   Tor._internal() {
-    _lib = load(libName);
-
-    if (kDebugMode) {
-      print("Instance of Tor created!");
-    }
+    debugPrint("Instance of Tor created!");
   }
 
   /// Start the Tor service.

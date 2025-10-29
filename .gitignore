@@ -33,9 +33,8 @@ migrate_working_dir/
 .packages
 build/
 
-rust/target/.rustc_info.json
-rust/target/debug
 /example
-/rust/target
+/rust/**/target
+/rust/**/Cargo.lock
 /example
 /example/ios
