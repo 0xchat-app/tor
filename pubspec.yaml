@@ -56,8 +56,11 @@ flutter:
   plugin:
     platforms:
       android:
+        package: com.oxchat.tor
+        pluginClass: TorPlugin
         ffiPlugin: true
       ios:
+        pluginClass: TorPlugin
         ffiPlugin: true
       linux:
         ffiPlugin: true

@@ -228,17 +228,44 @@ class SOCKSSocket {
       port & 0xFF
     ];
 
+
+    debugPrint('[SOCKS5] Connecting to $domain:$port via SOCKS proxy at $proxyHost:$proxyPort');
+
     // Send the connect command to the SOCKS proxy server.
     _socksSocket.add(request);
 
     // Wait for server response.
     var response = await _responseController.stream.first;
 
+
+    debugPrint('[SOCKS5] Response: ${response.map((b) => '0x${b.toRadixString(16).padLeft(2, '0')}').join(' ')}');
+    debugPrint('[SOCKS5] Response length: ${response.length}, version: 0x${response[0].toRadixString(16)}, reply: 0x${response[1].toRadixString(16)}');
+
+    // Validate SOCKS5 response
+    if (response.length < 2) {
+      throw Exception(
+          'socks_socket.connectTo(): Invalid SOCKS5 response (too short: ${response.length} bytes)');
+    }
+
+    if (response[0] != 0x05) {
+      throw Exception(
+          'socks_socket.connectTo(): Invalid SOCKS5 version in response: 0x${response[0].toRadixString(16)} (expected 0x05)');
+    }
+
     // Check if the connection was successful.
     if (response[1] != 0x00) {
+      final errorCode = response[1];
+      final errorMsg = _getSocks5ErrorMessage(errorCode);
+      final text = 'socks_socket.connectTo(): Failed to connect to $domain:$port through SOCKS5 proxy. '
+          'Error code: 0x${errorCode.toRadixString(16)} ($errorMsg). '
+          'Full response: ${response.map((b) => '0x${b.toRadixString(16).padLeft(2, '0')}').join(' ')}';
+      debugPrint('[SOCKS5] Exception: $text');
       throw Exception(
-          'socks_socket.connectTo(): Failed to connect to target through SOCKS5 proxy.');
+          text);
     }
+
+
+    debugPrint('[SOCKS5] ✓ Successfully connected to $domain:$port');
 
     // Upgrade to SSL if needed.
     if (sslEnabled) {
@@ -338,6 +365,32 @@ class SOCKSSocket {
           );
   }
 
+  /// Get human-readable SOCKS5 error message
+  String _getSocks5ErrorMessage(int errorCode) {
+    switch (errorCode) {
+      case 0x00:
+        return 'succeeded';
+      case 0x01:
+        return 'general SOCKS server failure';
+      case 0x02:
+        return 'connection not allowed by ruleset';
+      case 0x03:
+        return 'Network unreachable';
+      case 0x04:
+        return 'Host unreachable';
+      case 0x05:
+        return 'Connection refused';
+      case 0x06:
+        return 'TTL expired';
+      case 0x07:
+        return 'Command not supported';
+      case 0x08:
+        return 'Address type not supported';
+      default:
+        return 'Unknown error';
+    }
+  }
+
   /// Sends the server.features command to the proxy server.
   ///
   /// This demos how to send the server.features command.  Use as an example
@@ -357,7 +410,7 @@ class SOCKSSocket {
       // Wait for the response from the proxy server.
       var responseData = await _responseController.stream.first;
       if (kDebugMode) {
-        print("responseData: ${utf8.decode(responseData)}");
+        debugPrint("responseData: ${utf8.decode(responseData)}");
       }
     } else {
       // Send the command to the proxy server.
@@ -366,7 +419,7 @@ class SOCKSSocket {
       // Wait for the response from the proxy server.
       var responseData = await _secureResponseController.stream.first;
       if (kDebugMode) {
-        print("secure responseData: ${utf8.decode(responseData)}");
+        debugPrint("secure responseData: ${utf8.decode(responseData)}");
       }
     }
 

@@ -75,6 +75,9 @@ class Tor {
   /// The proxy port.
   int _proxyPort = -1;
 
+  /// System proxy monitor
+  SystemProxyMonitor? _proxyMonitor;
+
   /// Singleton instance of the Tor class.
   static final Tor _instance = Tor._internal();
 
@@ -142,63 +145,144 @@ class Tor {
 
   /// Start the Tor service.
   ///
-  /// This will start the Tor service and establish a Tor circuit.
+  /// Parameters:
+  /// - [useSystemProxy]: Whether to use system proxy (default: true)
+  /// - [canRetryWithError]: Whether to retry on certain errors (default: true)
+  ///
+  /// When useSystemProxy is true:
+  /// - System proxy is queried every 5 seconds
+  /// - Dart calls TorApi.setProxy() to update Rust-side proxy state
+  /// - Rust reads from this state for EACH network connection
+  /// - Automatically adapts to proxy changes
+  /// - Supports SOCKS5 and HTTP CONNECT proxies
+  /// - Falls back to direct connection if no proxy is configured
+  ///
+  /// When useSystemProxy is false:
+  /// - All connections use direct connection (no proxy)
+  /// - Faster startup and lower overhead
+  /// - Use for testing or when proxy is explicitly not wanted
   ///
   /// Throws an exception if the Tor service fails to start.
-  ///
-  /// Returns a Future that completes when the Tor service has started.
-  Future<void> start() async {
+  Future<void> start({
+    bool useSystemProxy = true,
+    bool canRetryWithError = true,
+  }) async {
     // Prevent concurrent starts
     if (_started || _starting) {
       return;
     }
-    
+
     _starting = true;
+
+    // Set the state and cache directories.
+    final Directory appSupportDir = await getApplicationSupportDirectory();
+    final stateDir = await Directory('${appSupportDir.path}/tor_state').create();
+    final cacheDir = await Directory('${appSupportDir.path}/tor_cache').create();
+
     try {
-      broadcastState();
-
-      // Set the state and cache directories.
-      final Directory appSupportDir = await getApplicationSupportDirectory();
-      final stateDir =
-          await Directory('${appSupportDir.path}/tor_state').create();
-      final cacheDir =
-          await Directory('${appSupportDir.path}/tor_cache').create();
-
       // Generate a random port.
       int newPort = await _getRandomUnusedPort();
 
-      // Start the Tor service in an isolate.
-      final tor = await Isolate.run(() async {
-        // Load the Tor library.
-        var lib = rust.NativeLibrary(load(libName));
+      // Setup system proxy monitor if enabled
+      if (useSystemProxy) {
+        _startProxyMonitor();
 
-        // Start the Tor service.
-        final tor = lib.tor_start(
-            newPort,
-            stateDir.path.toNativeUtf8() as Pointer<Char>,
-            cacheDir.path.toNativeUtf8() as Pointer<Char>);
+        debugPrint('🔄 Tor: Starting with system proxy support');
+        debugPrint('🔄 Tor: Proxy changes will be detected automatically');
+      } else {
+        debugPrint('🔄 Tor: Starting in direct connection mode (no proxy)');
+      }
 
-        // Throw an exception if the Tor service fails to start.
-        if (tor.client == nullptr) {
-          throwRustException(lib);
-        }
+      // Call Rust start function via FRB
+      final actualPort = await TorApi.start(
+        socksPort: newPort,
+        stateDir: stateDir.path,
+        cacheDir: cacheDir.path,
+        useSystemProxy: useSystemProxy,
+      );
 
-        return tor;
-      });
-
-      // Set the client pointer and started flag.
-      _clientPtr = Pointer.fromAddress(tor.client.address);
-      _proxyPtr = Pointer.fromAddress(tor.proxy.address);
+      // Set the started flag.
       _started = true;
+      _bootstrapped = true;
 
-      // Bootstrap the Tor service.
-      bootstrap();
+      if (useSystemProxy) {
+        debugPrint('✓ Tor: Client started with system proxy support (FRB)');
+        debugPrint('✓ Tor: SOCKS proxy listening on port $actualPort');
+        debugPrint('✓ Tor: Monitoring system proxy changes');
+
+        // Display initial proxy status
+        final stats = _proxyMonitor?.getStats();
+        debugPrint('📊 Proxy monitor stats: $stats');
+      } else {
+        debugPrint('✓ Tor: Client started in direct mode (no proxy)');
+        debugPrint('✓ Tor: SOCKS proxy listening on port $actualPort');
+      }
 
       // Set the proxy port.
-      _proxyPort = newPort;
+      _proxyPort = actualPort;
       broadcastState();
+    } catch (e) {
+      debugPrint('❌ Tor: Failed to start - $e');
+
+      if (e.toString().contains('Error setting up the guard manager')) {
+        await Future.wait([
+          stateDir.delete(recursive: true),
+          cacheDir.delete(recursive: true),
+        ]);
+
+        if (canRetryWithError) {
+          debugPrint('🔄 Tor: Retrying after cleaning state directories');
+          await start(useSystemProxy: useSystemProxy, canRetryWithError: false);
+        }
+      } else {
+        rethrow;
+      }
     } finally {
       _starting = false;
+    }
+  }
+
+  /// Start system proxy monitor
+  void _startProxyMonitor() {
+    // Stop existing monitor if any
+    _proxyMonitor?.stop();
+
+    // Create monitor with callback
+    _proxyMonitor = SystemProxyMonitor(
+      onChanged: _onProxyChanged,
+      pollInterval: const Duration(seconds: 5),
+    );
+
+    // Start monitoring
+    _proxyMonitor!.start();
+  }
+
+  /// Callback invoked when system proxy changes
+  void _onProxyChanged(proxy_support.ProxyInfo? proxy) {
+    if (proxy != null) {
+      // Convert from proxy_support.ProxyInfo to FRB ProxyInfo
+      final frbProxyInfo = frb.ProxyInfo(
+        address: proxy.address,
+        port: proxy.port,
+        proxyType: proxy.type.name == 'socks5'
+            ? frb.ProxyType.socks5
+            : frb.ProxyType.httpConnect,
+        username: null,
+        password: null,
+      );
+
+      debugPrint('[Tor] 🔄 Proxy changed, updating Rust: ${proxy.address}:${proxy.port} (${proxy.type.name})');
+
+      TorApi.setProxy(frbProxyInfo);
+
+      debugPrint('[Tor] ✅ Rust proxy updated');
+    } else {
+      debugPrint('[Tor] 🔄 Proxy removed, clearing Rust proxy');
+
+      // Clear proxy (use direct connection)
+      TorApi.setProxy(null);
+
+      debugPrint('[Tor] ✅ Rust proxy cleared (direct connection)');
     }
   }
 
@@ -213,16 +297,9 @@ class Tor {
   ///
   /// Returns void.
   void bootstrap() {
-    // Load the Tor library.
-    final lib = rust.NativeLibrary(_lib);
-
-    // Bootstrap the Tor service.
-    _bootstrapped = lib.tor_client_bootstrap(_clientPtr);
-
-    // Throw an exception if the Tor service fails to bootstrap.
-    if (!bootstrapped) {
-      throwRustException(lib);
-    }
+    // Bootstrap is handled internally by create_bootstrapped() in Rust
+    // No separate bootstrap call needed for FRB version
+    debugPrint('✓ Tor: Bootstrap called (handled internally)');
   }
 
   /// Prevent traffic flowing through the proxy
@@ -233,54 +310,22 @@ class Tor {
 
   /// Stops the proxy
   Future<void> stop() async {
-    final lib = rust.NativeLibrary(_lib);
-    lib.tor_proxy_stop(_proxyPtr);
-    _proxyPtr = nullptr;
+    // Stop proxy monitor
+    _proxyMonitor?.stop();
+    _proxyMonitor = null;
+
+    await TorApi.stop();
+    _started = false;
+    _bootstrapped = false;
+    _proxyPort = -1;
+    broadcastState();
   }
 
   Future<void> setClientDormant(bool dormant) async {
-    if (_clientPtr == nullptr || !started || !bootstrapped) {
+    if (!started || !bootstrapped) {
       throw ClientNotActive();
     }
 
-    final lib = rust.NativeLibrary(_lib);
-    lib.tor_client_set_dormant(_clientPtr, dormant);
-  }
-
-  Future<void> isReady() async {
-    return await Future.doWhile(
-        () => Future.delayed(const Duration(seconds: 1)).then((_) {
-              // We are waiting and making absolutely no request unless:
-              // Tor is disabled
-              if (!enabled) {
-                return false;
-              }
-
-              // ...or Tor circuit is established
-              if (bootstrapped) {
-                return false;
-              }
-
-              // This way we avoid making clearnet req's while Tor is initialising
-              return true;
-            }));
-  }
-
-  static void throwRustException(rust.NativeLibrary lib) {
-    String rustError = lib.tor_last_error_message().cast<Utf8>().toDartString();
-
-    throw _getRustException(rustError);
-  }
-
-  static Exception _getRustException(String rustError) {
-    if (rustError.contains('Unable to bootstrap a working directory')) {
-      return CouldntBootstrapDirectory(rustError: rustError);
-    } else {
-      return Exception(rustError);
-    }
-  }
-
-  void hello() {
-    rust.NativeLibrary(_lib).tor_hello();
+    await TorApi.setDormant(softMode: dormant);
   }
 }
