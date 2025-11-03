@@ -36,11 +36,17 @@ git subtree pull --prefix cargokit https://github.com/irondash/cargokit.git main
 
 Generate Dart bindings from Rust FRB APIs:
 
-```bash
+```shell
+just generate
+
+or
+
 flutter_rust_bridge_codegen generate \
-  --rust-input crate::bridge \
-  --rust-root rust/ \
-  --dart-output lib/dart_api/bridge_generated.dart
+    --rust-input crate::api \
+    --rust-root rust/ \
+    --rust-output rust/src/generated/frb_generated.rs \
+    --dart-output lib/rust_api/generated \
+    --no-web
 ```
 
 ## Example app

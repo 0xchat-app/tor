@@ -9,7 +9,7 @@ use arti::socks;
 use tokio::task::JoinHandle;
 use std::net::SocketAddr;
 
-use crate::bridge::{ProxyInfo, ProxyType};
+use crate::api::{ProxyInfo, ProxyType};
 use crate::proxy_provider::{ProxyAuth, ProxyConfig, ProxyTcpProvider};
 
 // Global proxy state that Dart can update at any time

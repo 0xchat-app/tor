@@ -3,11 +3,13 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
-import 'bridge.dart';
+import 'api/tor.dart';
+import 'api/types.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
-import 'frb_generated.io.dart';
+import 'frb_generated.io.dart'
+    if (dart.library.js_interop) 'frb_generated.web.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 /// Main entrypoint of the Rust API
@@ -65,7 +67,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.7.0';
 
   @override
-  int get rustContentHash => 1728426673;
+  int get rustContentHash => -2027089074;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -76,19 +78,19 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
-  Future<String> crateBridgeTorHelloFrb();
+  Future<String> crateApiTorTorHelloFrb();
 
-  Future<void> crateBridgeTorSetDormantFrb({required bool softMode});
+  Future<void> crateApiTorTorSetDormantFrb({required bool softMode});
 
-  Future<void> crateBridgeTorSetProxyFrb({ProxyInfo? proxy});
+  Future<void> crateApiTorTorSetProxyFrb({ProxyInfo? proxy});
 
-  Future<int> crateBridgeTorStartFrb(
+  Future<int> crateApiTorTorStartFrb(
       {required int socksPort,
       required String stateDir,
       required String cacheDir,
       required bool useSystemProxy});
 
-  Future<void> crateBridgeTorStopFrb();
+  Future<void> crateApiTorTorStopFrb();
 }
 
 class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
@@ -100,7 +102,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
-  Future<String> crateBridgeTorHelloFrb() {
+  Future<String> crateApiTorTorHelloFrb() {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -111,19 +113,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         decodeSuccessData: sse_decode_String,
         decodeErrorData: null,
       ),
-      constMeta: kCrateBridgeTorHelloFrbConstMeta,
+      constMeta: kCrateApiTorTorHelloFrbConstMeta,
       argValues: [],
       apiImpl: this,
     ));
   }
 
-  TaskConstMeta get kCrateBridgeTorHelloFrbConstMeta => const TaskConstMeta(
+  TaskConstMeta get kCrateApiTorTorHelloFrbConstMeta => const TaskConstMeta(
         debugName: "tor_hello_frb",
         argNames: [],
       );
 
   @override
-  Future<void> crateBridgeTorSetDormantFrb({required bool softMode}) {
+  Future<void> crateApiTorTorSetDormantFrb({required bool softMode}) {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -135,20 +137,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         decodeSuccessData: sse_decode_unit,
         decodeErrorData: null,
       ),
-      constMeta: kCrateBridgeTorSetDormantFrbConstMeta,
+      constMeta: kCrateApiTorTorSetDormantFrbConstMeta,
       argValues: [softMode],
       apiImpl: this,
     ));
   }
 
-  TaskConstMeta get kCrateBridgeTorSetDormantFrbConstMeta =>
+  TaskConstMeta get kCrateApiTorTorSetDormantFrbConstMeta =>
       const TaskConstMeta(
         debugName: "tor_set_dormant_frb",
         argNames: ["softMode"],
       );
 
   @override
-  Future<void> crateBridgeTorSetProxyFrb({ProxyInfo? proxy}) {
+  Future<void> crateApiTorTorSetProxyFrb({ProxyInfo? proxy}) {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -160,19 +162,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         decodeSuccessData: sse_decode_unit,
         decodeErrorData: null,
       ),
-      constMeta: kCrateBridgeTorSetProxyFrbConstMeta,
+      constMeta: kCrateApiTorTorSetProxyFrbConstMeta,
       argValues: [proxy],
       apiImpl: this,
     ));
   }
 
-  TaskConstMeta get kCrateBridgeTorSetProxyFrbConstMeta => const TaskConstMeta(
+  TaskConstMeta get kCrateApiTorTorSetProxyFrbConstMeta => const TaskConstMeta(
         debugName: "tor_set_proxy_frb",
         argNames: ["proxy"],
       );
 
   @override
-  Future<int> crateBridgeTorStartFrb(
+  Future<int> crateApiTorTorStartFrb(
       {required int socksPort,
       required String stateDir,
       required String cacheDir,
@@ -191,19 +193,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         decodeSuccessData: sse_decode_u_16,
         decodeErrorData: sse_decode_AnyhowException,
       ),
-      constMeta: kCrateBridgeTorStartFrbConstMeta,
+      constMeta: kCrateApiTorTorStartFrbConstMeta,
       argValues: [socksPort, stateDir, cacheDir, useSystemProxy],
       apiImpl: this,
     ));
   }
 
-  TaskConstMeta get kCrateBridgeTorStartFrbConstMeta => const TaskConstMeta(
+  TaskConstMeta get kCrateApiTorTorStartFrbConstMeta => const TaskConstMeta(
         debugName: "tor_start_frb",
         argNames: ["socksPort", "stateDir", "cacheDir", "useSystemProxy"],
       );
 
   @override
-  Future<void> crateBridgeTorStopFrb() {
+  Future<void> crateApiTorTorStopFrb() {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -214,13 +216,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         decodeSuccessData: sse_decode_unit,
         decodeErrorData: null,
       ),
-      constMeta: kCrateBridgeTorStopFrbConstMeta,
+      constMeta: kCrateApiTorTorStopFrbConstMeta,
       argValues: [],
       apiImpl: this,
     ));
   }
 
-  TaskConstMeta get kCrateBridgeTorStopFrbConstMeta => const TaskConstMeta(
+  TaskConstMeta get kCrateApiTorTorStopFrbConstMeta => const TaskConstMeta(
         debugName: "tor_stop_frb",
         argNames: [],
       );

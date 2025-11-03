@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-import 'bridge_generated.dart/bridge.dart';
+import 'generated/api/tor.dart';
+import 'generated/api/types.dart';
 
 /// Dart-side API wrapper for calling Rust Tor functions via FRB
 /// 
@@ -69,3 +70,4 @@ class TorApi {
   static Future<void> setDormant({required bool softMode}) =>
       torSetDormantFrb(softMode: softMode);
 }
+

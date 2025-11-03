@@ -6,9 +6,11 @@
 # Generate FRB bindings
 generate:
     flutter_rust_bridge_codegen generate \
-        --rust-input crate::bridge \
+        --rust-input crate::api \
         --rust-root rust/ \
-        --dart-output lib/dart_api/bridge_generated.dart
+        --rust-output rust/src/generated/frb_generated.rs \
+        --dart-output lib/rust_api/generated \
+        --no-web
 
 # Build Rust library for development (host platform)
 build:

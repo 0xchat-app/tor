@@ -4,25 +4,7 @@
 
 use flutter_rust_bridge::frb;
 use crate::manager;
-
-/// Proxy type enumeration
-#[frb]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ProxyType {
-    Socks5,
-    HttpConnect,
-}
-
-/// Proxy information passed from Dart
-#[frb]
-#[derive(Debug, Clone)]
-pub struct ProxyInfo {
-    pub address: String,
-    pub port: u16,
-    pub proxy_type: ProxyType,
-    pub username: Option<String>,
-    pub password: Option<String>,
-}
+use super::ProxyInfo;
 
 /// Minimal FRB-exposed API to validate toolchain
 #[frb]
@@ -66,5 +48,4 @@ pub fn tor_stop_frb() {
 pub fn tor_set_dormant_frb(soft_mode: bool) {
     manager::set_dormant(soft_mode);
 }
-
 

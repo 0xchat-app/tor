@@ -3,44 +3,10 @@
 
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
-import 'frb_generated.dart';
+import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `clone`, `clone`, `eq`, `fmt`, `fmt`
-
-/// Minimal FRB-exposed API to validate toolchain
-Future<String> torHelloFrb() => RustLib.instance.api.crateBridgeTorHelloFrb();
-
-/// Start Tor service
-///
-/// If use_system_proxy is true, Tor will use the proxy set via tor_set_proxy_frb().
-/// If false or no proxy is set, direct connections will be used.
-Future<int> torStartFrb(
-        {required int socksPort,
-        required String stateDir,
-        required String cacheDir,
-        required bool useSystemProxy}) =>
-    RustLib.instance.api.crateBridgeTorStartFrb(
-        socksPort: socksPort,
-        stateDir: stateDir,
-        cacheDir: cacheDir,
-        useSystemProxy: useSystemProxy);
-
-/// Update current proxy configuration
-///
-/// Pass None to clear proxy (use direct connection).
-/// Pass Some(ProxyInfo) to set/update proxy.
-///
-/// This can be called while Tor is running to update proxy dynamically.
-Future<void> torSetProxyFrb({ProxyInfo? proxy}) =>
-    RustLib.instance.api.crateBridgeTorSetProxyFrb(proxy: proxy);
-
-/// Stop Tor service
-Future<void> torStopFrb() => RustLib.instance.api.crateBridgeTorStopFrb();
-
-/// Set dormant mode
-Future<void> torSetDormantFrb({required bool softMode}) =>
-    RustLib.instance.api.crateBridgeTorSetDormantFrb(softMode: softMode);
 
 /// Proxy information passed from Dart
 class ProxyInfo {

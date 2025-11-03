@@ -37,7 +37,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.7.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1728426673;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -2027089074;
 
 // Section: executor
 
@@ -45,7 +45,7 @@ flutter_rust_bridge::frb_generated_default_handler!();
 
 // Section: wire_funcs
 
-fn wire__crate__bridge__tor_hello_frb_impl(
+fn wire__crate__api__tor__tor_hello_frb_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -70,14 +70,14 @@ fn wire__crate__bridge__tor_hello_frb_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::bridge::tor_hello_frb())?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::tor::tor_hello_frb())?;
                     Ok(output_ok)
                 })())
             }
         },
     )
 }
-fn wire__crate__bridge__tor_set_dormant_frb_impl(
+fn wire__crate__api__tor__tor_set_dormant_frb_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -104,7 +104,7 @@ fn wire__crate__bridge__tor_set_dormant_frb_impl(
             move |context| {
                 transform_result_sse::<_, ()>((move || {
                     let output_ok = Result::<_, ()>::Ok({
-                        crate::bridge::tor_set_dormant_frb(api_soft_mode);
+                        crate::api::tor::tor_set_dormant_frb(api_soft_mode);
                     })?;
                     Ok(output_ok)
                 })())
@@ -112,7 +112,7 @@ fn wire__crate__bridge__tor_set_dormant_frb_impl(
         },
     )
 }
-fn wire__crate__bridge__tor_set_proxy_frb_impl(
+fn wire__crate__api__tor__tor_set_proxy_frb_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -134,12 +134,12 @@ fn wire__crate__bridge__tor_set_proxy_frb_impl(
             };
             let mut deserializer =
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_proxy = <Option<crate::bridge::ProxyInfo>>::sse_decode(&mut deserializer);
+            let api_proxy = <Option<crate::api::types::ProxyInfo>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
                     let output_ok = Result::<_, ()>::Ok({
-                        crate::bridge::tor_set_proxy_frb(api_proxy);
+                        crate::api::tor::tor_set_proxy_frb(api_proxy);
                     })?;
                     Ok(output_ok)
                 })())
@@ -147,7 +147,7 @@ fn wire__crate__bridge__tor_set_proxy_frb_impl(
         },
     )
 }
-fn wire__crate__bridge__tor_start_frb_impl(
+fn wire__crate__api__tor__tor_start_frb_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -177,7 +177,7 @@ fn wire__crate__bridge__tor_start_frb_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::bridge::tor_start_frb(
+                        let output_ok = crate::api::tor::tor_start_frb(
                             api_socks_port,
                             api_state_dir,
                             api_cache_dir,
@@ -192,7 +192,7 @@ fn wire__crate__bridge__tor_start_frb_impl(
         },
     )
 }
-fn wire__crate__bridge__tor_stop_frb_impl(
+fn wire__crate__api__tor__tor_stop_frb_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -218,7 +218,7 @@ fn wire__crate__bridge__tor_stop_frb_impl(
             move |context| {
                 transform_result_sse::<_, ()>((move || {
                     let output_ok = Result::<_, ()>::Ok({
-                        crate::bridge::tor_stop_frb();
+                        crate::api::tor::tor_stop_frb();
                     })?;
                     Ok(output_ok)
                 })())
@@ -282,26 +282,26 @@ impl SseDecode for Option<String> {
     }
 }
 
-impl SseDecode for Option<crate::bridge::ProxyInfo> {
+impl SseDecode for Option<crate::api::types::ProxyInfo> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
-            return Some(<crate::bridge::ProxyInfo>::sse_decode(deserializer));
+            return Some(<crate::api::types::ProxyInfo>::sse_decode(deserializer));
         } else {
             return None;
         }
     }
 }
 
-impl SseDecode for crate::bridge::ProxyInfo {
+impl SseDecode for crate::api::types::ProxyInfo {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_address = <String>::sse_decode(deserializer);
         let mut var_port = <u16>::sse_decode(deserializer);
-        let mut var_proxyType = <crate::bridge::ProxyType>::sse_decode(deserializer);
+        let mut var_proxyType = <crate::api::types::ProxyType>::sse_decode(deserializer);
         let mut var_username = <Option<String>>::sse_decode(deserializer);
         let mut var_password = <Option<String>>::sse_decode(deserializer);
-        return crate::bridge::ProxyInfo {
+        return crate::api::types::ProxyInfo {
             address: var_address,
             port: var_port,
             proxy_type: var_proxyType,
@@ -311,13 +311,13 @@ impl SseDecode for crate::bridge::ProxyInfo {
     }
 }
 
-impl SseDecode for crate::bridge::ProxyType {
+impl SseDecode for crate::api::types::ProxyType {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <i32>::sse_decode(deserializer);
         return match inner {
-            0 => crate::bridge::ProxyType::Socks5,
-            1 => crate::bridge::ProxyType::HttpConnect,
+            0 => crate::api::types::ProxyType::Socks5,
+            1 => crate::api::types::ProxyType::HttpConnect,
             _ => unreachable!("Invalid variant for ProxyType: {}", inner),
         };
     }
@@ -351,11 +351,11 @@ fn pde_ffi_dispatcher_primary_impl(
 ) {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        1 => wire__crate__bridge__tor_hello_frb_impl(port, ptr, rust_vec_len, data_len),
-        2 => wire__crate__bridge__tor_set_dormant_frb_impl(port, ptr, rust_vec_len, data_len),
-        3 => wire__crate__bridge__tor_set_proxy_frb_impl(port, ptr, rust_vec_len, data_len),
-        4 => wire__crate__bridge__tor_start_frb_impl(port, ptr, rust_vec_len, data_len),
-        5 => wire__crate__bridge__tor_stop_frb_impl(port, ptr, rust_vec_len, data_len),
+        1 => wire__crate__api__tor__tor_hello_frb_impl(port, ptr, rust_vec_len, data_len),
+        2 => wire__crate__api__tor__tor_set_dormant_frb_impl(port, ptr, rust_vec_len, data_len),
+        3 => wire__crate__api__tor__tor_set_proxy_frb_impl(port, ptr, rust_vec_len, data_len),
+        4 => wire__crate__api__tor__tor_start_frb_impl(port, ptr, rust_vec_len, data_len),
+        5 => wire__crate__api__tor__tor_stop_frb_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -375,7 +375,7 @@ fn pde_ffi_dispatcher_sync_impl(
 // Section: rust2dart
 
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::bridge::ProxyInfo {
+impl flutter_rust_bridge::IntoDart for crate::api::types::ProxyInfo {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.address.into_into_dart().into_dart(),
@@ -387,14 +387,16 @@ impl flutter_rust_bridge::IntoDart for crate::bridge::ProxyInfo {
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::bridge::ProxyInfo {}
-impl flutter_rust_bridge::IntoIntoDart<crate::bridge::ProxyInfo> for crate::bridge::ProxyInfo {
-    fn into_into_dart(self) -> crate::bridge::ProxyInfo {
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::types::ProxyInfo {}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::types::ProxyInfo>
+    for crate::api::types::ProxyInfo
+{
+    fn into_into_dart(self) -> crate::api::types::ProxyInfo {
         self
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::bridge::ProxyType {
+impl flutter_rust_bridge::IntoDart for crate::api::types::ProxyType {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self {
             Self::Socks5 => 0.into_dart(),
@@ -403,9 +405,11 @@ impl flutter_rust_bridge::IntoDart for crate::bridge::ProxyType {
         }
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::bridge::ProxyType {}
-impl flutter_rust_bridge::IntoIntoDart<crate::bridge::ProxyType> for crate::bridge::ProxyType {
-    fn into_into_dart(self) -> crate::bridge::ProxyType {
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::types::ProxyType {}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::types::ProxyType>
+    for crate::api::types::ProxyType
+{
+    fn into_into_dart(self) -> crate::api::types::ProxyType {
         self
     }
 }
@@ -458,34 +462,34 @@ impl SseEncode for Option<String> {
     }
 }
 
-impl SseEncode for Option<crate::bridge::ProxyInfo> {
+impl SseEncode for Option<crate::api::types::ProxyInfo> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
-            <crate::bridge::ProxyInfo>::sse_encode(value, serializer);
+            <crate::api::types::ProxyInfo>::sse_encode(value, serializer);
         }
     }
 }
 
-impl SseEncode for crate::bridge::ProxyInfo {
+impl SseEncode for crate::api::types::ProxyInfo {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.address, serializer);
         <u16>::sse_encode(self.port, serializer);
-        <crate::bridge::ProxyType>::sse_encode(self.proxy_type, serializer);
+        <crate::api::types::ProxyType>::sse_encode(self.proxy_type, serializer);
         <Option<String>>::sse_encode(self.username, serializer);
         <Option<String>>::sse_encode(self.password, serializer);
     }
 }
 
-impl SseEncode for crate::bridge::ProxyType {
+impl SseEncode for crate::api::types::ProxyType {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(
             match self {
-                crate::bridge::ProxyType::Socks5 => 0,
-                crate::bridge::ProxyType::HttpConnect => 1,
+                crate::api::types::ProxyType::Socks5 => 0,
+                crate::api::types::ProxyType::HttpConnect => 1,
                 _ => {
                     unimplemented!("");
                 }

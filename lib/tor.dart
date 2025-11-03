@@ -9,9 +9,9 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:tor/dart_api/bridge_generated.dart/bridge.dart' as frb;
-import 'package:tor/dart_api/bridge_generated.dart/frb_generated.dart';
-import 'package:tor/dart_api/tor_api.dart';
+import 'package:tor/rust_api/generated/api/types.dart' as frb;
+import 'package:tor/rust_api/generated/frb_generated.dart';
+import 'package:tor/rust_api/tor_api.dart';
 import 'package:tor/system_proxy_monitor.dart';
 import 'package:tor/proxy_support.dart' as proxy_support;
 
