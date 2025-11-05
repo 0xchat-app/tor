@@ -245,7 +245,6 @@ class SystemProxy {
       // Priority: SOCKS5 > HTTPS > HTTP
       final socks5 = allProxies['socks5'];
       if (socks5 != null && socks5.isConfigured) {
-        debugPrint('🔌 Using SOCKS5 proxy: ${socks5.host}:${socks5.port}');
         return ProxyInfo(
           address: socks5.host,
           port: socks5.port,
@@ -257,7 +256,6 @@ class SystemProxy {
       // For HTTP/HTTPS proxies, use HTTP CONNECT protocol
       final https = allProxies['https'];
       if (https != null && https.isConfigured) {
-        debugPrint('🔌 Using HTTPS proxy (HTTP CONNECT): ${https.host}:${https.port}');
         return ProxyInfo(
           address: https.host,
           port: https.port,
@@ -268,7 +266,6 @@ class SystemProxy {
 
       final http = allProxies['http'];
       if (http != null && http.isConfigured) {
-        debugPrint('🔌 Using HTTP proxy (HTTP CONNECT): ${http.host}:${http.port}');
         return ProxyInfo(
           address: http.host,
           port: http.port,

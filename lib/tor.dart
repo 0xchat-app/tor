@@ -9,11 +9,12 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:tor/proxy_support.dart';
 import 'package:tor/rust_api/generated/api/types.dart' as frb;
 import 'package:tor/rust_api/generated/frb_generated.dart';
 import 'package:tor/rust_api/tor_api.dart';
 import 'package:tor/system_proxy_monitor.dart';
-import 'package:tor/proxy_support.dart' as proxy_support;
+import 'package:tor/proxy_support.dart';
 
 class CouldntBootstrapDirectory implements Exception {
   String? rustError;
@@ -103,6 +104,7 @@ class Tor {
 
   /// Private constructor for the Tor class.
   Tor._internal() {
+    _startProxyMonitor();
     debugPrint("Instance of Tor created!");
   }
 
@@ -183,16 +185,6 @@ class Tor {
       // Generate a random port.
       int newPort = await _getRandomUnusedPort();
 
-      // Setup system proxy monitor if enabled
-      if (useSystemProxy) {
-        _startProxyMonitor();
-
-        debugPrint('🔄 Tor: Starting with system proxy support');
-        debugPrint('🔄 Tor: Proxy changes will be detected automatically');
-      } else {
-        debugPrint('🔄 Tor: Starting in direct connection mode (no proxy)');
-      }
-
       // Call Rust start function via FRB
       final actualPort = await TorApi.start(
         socksPort: newPort,
@@ -258,9 +250,9 @@ class Tor {
   }
 
   /// Callback invoked when system proxy changes
-  void _onProxyChanged(proxy_support.ProxyInfo? proxy) {
+  void _onProxyChanged(ProxyInfo? proxy) {
     if (proxy != null) {
-      // Convert from proxy_support.ProxyInfo to FRB ProxyInfo
+      // Convert from ProxyInfo to FRB ProxyInfo
       final frbProxyInfo = frb.ProxyInfo(
         address: proxy.address,
         port: proxy.port,
@@ -310,10 +302,6 @@ class Tor {
 
   /// Stops the proxy
   Future<void> stop() async {
-    // Stop proxy monitor
-    _proxyMonitor?.stop();
-    _proxyMonitor = null;
-
     await TorApi.stop();
     _started = false;
     _bootstrapped = false;
@@ -328,4 +316,8 @@ class Tor {
 
     await TorApi.setDormant(softMode: dormant);
   }
+
+  Future<void>? checkSystemProxy() => _proxyMonitor?.checkNow();
+
+  ProxyInfo? currentSystemProxy() => _proxyMonitor?.current;
 }
