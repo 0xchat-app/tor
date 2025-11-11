@@ -14,17 +14,6 @@ import 'package:tor/rust_api/generated/api/types.dart' as frb;
 import 'package:tor/rust_api/generated/frb_generated.dart';
 import 'package:tor/rust_api/tor_api.dart';
 import 'package:tor/system_proxy_monitor.dart';
-import 'package:tor/proxy_support.dart';
-
-class CouldntBootstrapDirectory implements Exception {
-  String? rustError;
-
-  CouldntBootstrapDirectory({this.rustError});
-}
-
-class NotSupportedPlatform implements Exception {
-  NotSupportedPlatform(String s);
-}
 
 class ClientNotActive implements Exception {}
 
@@ -53,6 +42,8 @@ class Tor {
 
   /// Getter for the bootstrapped flag.
   bool _bootstrapped = false;
+
+  ProxyInfo? customProxy;
 
   /// A stream of Tor events.
   ///
@@ -241,12 +232,27 @@ class Tor {
 
     // Create monitor with callback
     _proxyMonitor = SystemProxyMonitor(
-      onChanged: _onProxyChanged,
+      onChanged: (proxy) {
+        if (customProxy != null) return;
+        _onProxyChanged(proxy);
+      },
       pollInterval: const Duration(seconds: 5),
     );
 
     // Start monitoring
-    _proxyMonitor!.start();
+    _proxyMonitor?.start();
+  }
+
+  void updateCustomProxy(ProxyInfo? proxy) {
+    if (customProxy == proxy) return;
+
+    if (proxy != null) {
+      _proxyMonitor?.stop();
+    } else {
+      _proxyMonitor?.start();
+    }
+    customProxy = proxy;
+    _onProxyChanged(proxy);
   }
 
   /// Callback invoked when system proxy changes
